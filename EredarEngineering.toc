@@ -1,0 +1,39 @@
+## Interface: 120007, 120100
+## Title: EredarEngineering
+## Version: 0.1.0-alpha
+## Notes: Argus > Artificer Yvel > Learn Eredar Engineering
+## Author: Kakushinzui Koreporation
+## IconTexture: Interface\Icons\Trade_Engineering
+## SavedVariables: EredarEngineeringDB
+
+EredarEngineering.lua
+
+src/Database/Main.lua
+src/Database/CharacterClasses.lua
+src/Database/EquipmentSlots.lua
+src/Database/CharacterEquipment.lua
+src/Database/Inventory.lua
+
+src/Commands/Main.lua
+src/Commands/ReloadUI.lua
+src/Commands/Heirlooms.lua
+src/Commands/Inventory.lua
+
+src/Gameplay/SpecialVariables.lua
+src/Gameplay/ActionBars.lua
+src/Gameplay/Controls.lua
+src/Gameplay/Warband.lua
+
+src/Sync/Main.lua
+
+src/UI/EngineeringToolsFrame.lua
+
+src/EditMode/Main.lua
+
+src/SlashCommands/Main.lua
+
+# --- Notes ---
+# The `## Interface:` value must match the client. Run in-game:
+#   /run print(select(4, GetBuildInfo()))
+# Listing two values (120007, 120100) keeps the addon compatible across both patches,
+# matching how other addons declare theirs.

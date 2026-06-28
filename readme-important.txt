@@ -1,0 +1,1 @@
+Your addon folder name and .toc file should have the same name.
