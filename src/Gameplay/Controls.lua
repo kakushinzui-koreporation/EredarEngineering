@@ -12,7 +12,12 @@ local SECTIONS = { "Controls", "Camera", "Mouse" }
 
 local CONTROL_SETTINGS = {
     { key = "autoLoot",           cvar = "autoLootDefault",    label = "Auto Loot",                  kind = "boolean", section = "Controls" },
-    { key = "stickyTargeting",    cvar = "deselectOnClick",    label = "Sticky Targeting",           kind = "boolean", section = "Controls", inverted = true },
+    -- writeProtected = true: confirmed live (2026-07-03) that WoW only accepts a change to this
+    -- CVar from a genuine hardware click on its own checkbox. C_CVar.SetCVar("deselectOnClick", ...)
+    -- returns true (not the nil the client uses for ordinary secure-CVar rejection) from every
+    -- insecure origin tried -- addon code, /console, /run, and even the live Setting object's
+    -- :SetValue() -- yet GetCVar never reflects the change. Reads are unaffected and stay accurate.
+    { key = "stickyTargeting",    cvar = "deselectOnClick",    label = "Sticky Targeting",           kind = "boolean", section = "Controls", inverted = true, writeProtected = true },
     { key = "lootAtMouse",        cvar = "lootUnderMouse",     label = "Loot at Mouse",              kind = "boolean", section = "Controls" },
     { key = "autoDismountFlying", cvar = "autoDismountFlying", label = "Auto Dismount while Flying", kind = "boolean", section = "Controls" },
     { key = "autoCancelAway",     cvar = "autoClearAFK",       label = "Auto Cancel Away Mode",      kind = "boolean", section = "Controls" },
@@ -180,6 +185,10 @@ function Controls:Set(key, value)
     if not setting then
         return false, "unknown setting key: " .. tostring(key)
     end
+    if setting.writeProtected then
+        return false, setting.cvar .. " is write-protected -- WoW only accepts a change to it " ..
+            "from a real click on its own checkbox, not from addon or slash-command code"
+    end
     if not setting.proxy and not cvarExists(setting.cvar) then
         return false, "CVar not present on this client: " .. setting.cvar
     end
@@ -258,6 +267,9 @@ function Controls:SelfTest()
             local _, state = readSetting(setting)
             if state ~= "present" then
                 print(ERROR_PREFIX .. "SKIP  " .. setting.label .. ": " .. state)
+            elseif setting.writeProtected then
+                print(HEADER_PREFIX .. "SKIP  " .. setting.label ..
+                    " (write-protected -- requires a real UI click, confirmed live)")
             elseif setting.kind ~= "boolean" then
                 print(HEADER_PREFIX .. "SKIP  " .. setting.label .. " = " ..
                     tostring(Controls:Get(setting.key)) .. " (non-boolean, not flipped)")
