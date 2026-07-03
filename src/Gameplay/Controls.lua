@@ -233,6 +233,31 @@ function Controls:Toggle(key)
     return self:Set(key, not self:Get(key))
 end
 
+-- Coerces a raw string value (from a slash command argument, or a SavedVariables entry
+-- written by the companion app) into the type Set expects, then funnels it through Set --
+-- the same single validated write path everything else uses. Only
+-- `kind = "boolean"` needs coercion (on/true/1 -> true, off/false/0 -> false); enum and number
+-- kinds pass the raw string straight through unchanged.
+function Controls:SetFromString(key, rawValue)
+    local setting = settingByKey[key]
+    if setting == nil then
+        return false, "unknown setting key: " .. tostring(key)
+    end
+
+    local desired = rawValue
+    if setting.kind == "boolean" then
+        if rawValue == "on" or rawValue == "true" or rawValue == "1" or rawValue == true then
+            desired = true
+        elseif rawValue == "off" or rawValue == "false" or rawValue == "0" or rawValue == false then
+            desired = false
+        else
+            return false, "boolean setting expects on/off: " .. key
+        end
+    end
+
+    return self:Set(key, desired)
+end
+
 function Controls:List()
     print(HEADER_PREFIX .. "=== Controls settings ===")
     forEachGroup(function(groupName, settings)
@@ -474,25 +499,7 @@ local function printGet(key)
 end
 
 local function printSet(key, value)
-    local setting = settingByKey[key]
-    if setting == nil then
-        print(ERROR_PREFIX .. "Unknown key: " .. tostring(key))
-        return
-    end
-
-    local desired = value
-    if setting.kind == "boolean" then
-        if value == "on" or value == "true" or value == "1" then
-            desired = true
-        elseif value == "off" or value == "false" or value == "0" then
-            desired = false
-        else
-            print(ERROR_PREFIX .. "Boolean setting expects on/off: " .. key)
-            return
-        end
-    end
-
-    local ok, err = Controls:Set(key, desired)
+    local ok, err = Controls:SetFromString(key, value)
     if ok then
         print(PREFIX .. "Set " .. key .. " -> " .. tostring(Controls:Get(key)))
     else
