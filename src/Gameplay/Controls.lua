@@ -27,7 +27,10 @@ local CONTROL_SETTINGS = {
     -- proxy = true: a Settings.RegisterProxySetting widget with no plain console variable behind
     -- it. Get/Set route through a live Setting object instead of C_CVar -- see readSetting/writeSetting.
     { key = "enableInteractKey",  cvar = "PROXY_ENABLE_INTERACT", label = "Enable Interact Key",     kind = "boolean", section = "Controls", proxy = true },
-    { key = "lootKey",            cvar = "AUTOLOOTTOGGLE",     label = "Loot Key",                   kind = "string",  section = "Controls", proxy = true },
+    -- kind = "enum": closed set of valid raw string values, confirmed live (2026-07-03) that
+    -- the live Setting object's :SetValue() takes the same raw string the dropdown stores, no
+    -- key-code mapping needed. See normalizeEnumValue.
+    { key = "lootKey",            cvar = "AUTOLOOTTOGGLE",     label = "Loot Key",                   kind = "enum",  section = "Controls", proxy = true, values = { "SHIFT", "CTRL", "ALT", "NONE" } },
 
     { key = "cameraWaterCollision", cvar = "cameraWaterCollision", label = "Water Collision", kind = "boolean", section = "Camera" },
     { key = "cameraFollowStyle",    cvar = "cameraSmoothStyle",   label = "Camera Following Style", kind = "number", section = "Camera" },
@@ -149,6 +152,22 @@ local function writeSetting(setting, value)
     return true
 end
 
+-- Case-insensitive membership check against a `kind = "enum"` setting's closed `values` list --
+-- the Lua equivalent of a TypeScript `type X = "A" | "B" | "C"` union, enforced at the one
+-- point every write path (addon code and /ee-controls set) funnels through.
+local function normalizeEnumValue(setting, value)
+    if type(value) ~= "string" then
+        return nil
+    end
+    local upper = value:upper()
+    for _, allowed in ipairs(setting.values) do
+        if allowed == upper then
+            return allowed
+        end
+    end
+    return nil
+end
+
 local function boolFromRaw(setting, raw)
     local enabled = rawIsOne(raw)
     if setting.inverted then
@@ -194,6 +213,14 @@ function Controls:Set(key, value)
     end
     if setting.kind == "boolean" then
         return writeBoolean(setting, value == true)
+    end
+    if setting.kind == "enum" then
+        local normalized = normalizeEnumValue(setting, value)
+        if not normalized then
+            return false, "invalid value " .. tostring(value) .. " for " .. setting.key ..
+                " -- expected one of: " .. table.concat(setting.values, ", ")
+        end
+        return writeSetting(setting, normalized)
     end
     return writeSetting(setting, value)
 end
