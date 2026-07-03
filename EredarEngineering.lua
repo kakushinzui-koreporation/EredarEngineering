@@ -4,14 +4,7 @@ _G.EredarEngineering = _G.EredarEngineering or {}
 
 local addonFrame = CreateFrame("Frame")
 addonFrame:RegisterEvent("ADDON_LOADED")
-addonFrame:RegisterEvent("PLAYER_ENTERING_WORLD")
 addonFrame:SetScript("OnEvent", function(self, event, addonName)
-    if event == "PLAYER_ENTERING_WORLD" then
-        EredarEngineering.EngineeringToolsFrame:Toggle()
-        self:UnregisterEvent("PLAYER_ENTERING_WORLD")
-        return
-    end
-
     if addonName ~= "EredarEngineering" then return end
 
 
