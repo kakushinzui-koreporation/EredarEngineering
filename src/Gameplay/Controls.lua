@@ -25,6 +25,8 @@ local CONTROL_SETTINGS = {
     { key = "lootKey",            cvar = "AUTOLOOTTOGGLE",     label = "Loot Key",                   kind = "string",  section = "Controls", proxy = true },
 
     { key = "cameraWaterCollision", cvar = "cameraWaterCollision", label = "Water Collision", kind = "boolean", section = "Camera" },
+    { key = "cameraFollowStyle",    cvar = "cameraSmoothStyle",   label = "Camera Following Style", kind = "number", section = "Camera" },
+    { key = "autoFollowSpeed",      cvar = "PROXY_CAMERA_SPEED",  label = "Auto Follow Speed",  kind = "number", section = "Camera", proxy = true },
 
     { key = "lockCursor",  cvar = "ClipCursor",     label = "Lock Cursor to Window", kind = "boolean", section = "Mouse" },
     { key = "invertMouse", cvar = "mouseInvertPitch", label = "Invert Mouse",        kind = "boolean", section = "Mouse" },
