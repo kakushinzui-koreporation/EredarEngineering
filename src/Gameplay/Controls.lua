@@ -33,7 +33,11 @@ local CONTROL_SETTINGS = {
     { key = "lootKey",            cvar = "AUTOLOOTTOGGLE",     label = "Loot Key",                   kind = "enum",  section = "Controls", proxy = true, values = { "SHIFT", "CTRL", "ALT", "NONE" } },
 
     { key = "cameraWaterCollision", cvar = "cameraWaterCollision", label = "Water Collision", kind = "boolean", section = "Camera" },
-    { key = "cameraFollowStyle",    cvar = "cameraSmoothStyle",   label = "Camera Following Style", kind = "number", section = "Camera" },
+    -- kind = "enum" with numeric values: confirmed live (2026-07-03) via /ee-controls dump that
+    -- this row's dropdown options are a closed set of 4 specific integers -- {0, 1, 2, 4}, not
+    -- a contiguous slider range -- so it was reclassified out of kind = "number". See
+    -- normalizeEnumValue for how numeric enums differ from lootKey's string enum.
+    { key = "cameraFollowStyle",    cvar = "cameraSmoothStyle",   label = "Camera Following Style", kind = "enum", section = "Camera", values = { 0, 1, 2, 4 } },
     { key = "autoFollowSpeed",      cvar = "PROXY_CAMERA_SPEED",  label = "Auto Follow Speed",  kind = "number", section = "Camera", proxy = true },
 
     { key = "lockCursor",  cvar = "ClipCursor",     label = "Lock Cursor to Window", kind = "boolean", section = "Mouse" },
@@ -46,8 +50,10 @@ local CONTROL_SETTINGS = {
 }
 
 local settingByKey = {}
+local settingByVariable = {}
 for _, setting in ipairs(CONTROL_SETTINGS) do
     settingByKey[setting.key] = setting
+    settingByVariable[setting.cvar] = setting
 end
 
 local function settingsInSection(section)
@@ -152,10 +158,26 @@ local function writeSetting(setting, value)
     return true
 end
 
--- Case-insensitive membership check against a `kind = "enum"` setting's closed `values` list --
--- the Lua equivalent of a TypeScript `type X = "A" | "B" | "C"` union, enforced at the one
--- point every write path (addon code and /ee-controls set) funnels through.
+-- Membership check against a `kind = "enum"` setting's closed `values` list -- the Lua
+-- equivalent of a TypeScript `type X = "A" | "B" | "C"` union, enforced at the one point every
+-- write path (addon code and /ee-controls set) funnels through. `values` holds either all
+-- strings (case-insensitive match, e.g. lootKey's SHIFT/CTRL/ALT/NONE) or all numbers
+-- (cameraFollowStyle's closed {0, 1, 2, 4}, confirmed live 2026-07-03 to not be a contiguous
+-- range) -- never a mix, so the first entry's type decides which comparison to use.
 local function normalizeEnumValue(setting, value)
+    if type(setting.values[1]) == "number" then
+        local numeric = tonumber(value)
+        if numeric == nil then
+            return nil
+        end
+        for _, allowed in ipairs(setting.values) do
+            if allowed == numeric then
+                return allowed
+            end
+        end
+        return nil
+    end
+
     if type(value) ~= "string" then
         return nil
     end
@@ -370,6 +392,91 @@ local function settingValue(setting)
     return nil
 end
 
+-- kind = "number" rows in CONTROL_SETTINGS have no confirmed value range yet -- this is the
+-- blocking step for the export/import bit layout (binary+base64, see pending.md). Sliders
+-- expose their range through data.options, either a pre-built table or a factory function
+-- returning one (Settings.CreateSliderOptions); the exact accessor names are a best-effort
+-- guess same as findScrollBox, so unknown shapes fall back to a raw key dump instead of
+-- failing silently.
+local function dumpOptionsRange(data)
+    local optionsSource = data.options
+    local options
+
+    if type(optionsSource) == "function" then
+        local ok, called = pcall(optionsSource)
+        if not ok or type(called) ~= "table" then
+            print(ERROR_PREFIX .. string.format("    data.options() did not return a table (ok=%s, value=%s)",
+                tostring(ok), tostring(called)))
+            return
+        end
+        options = called
+    elseif type(optionsSource) == "table" then
+        options = optionsSource
+    else
+        local keys = {}
+        for k in pairs(data) do table.insert(keys, tostring(k)) end
+        print(ERROR_PREFIX .. "    data.options is neither a function nor a table (" ..
+            tostring(optionsSource) .. "). data keys: " .. table.concat(keys, ", "))
+        return
+    end
+
+    -- Confirmed live (2026-07-03) on PROXY_MOUSE_LOOK_SPEED's options table: plain fields
+    -- (minValue/maxValue/steps), not getter methods. Try the field first, then fall back to a
+    -- same-named method in case another slider's options table is shaped differently.
+    local function readField(fieldName, methodName)
+        local field = options[fieldName]
+        if field ~= nil and type(field) ~= "function" then
+            return field
+        end
+        local method = options[methodName]
+        if type(method) ~= "function" then
+            return nil
+        end
+        local callOk, value = pcall(method, options)
+        if callOk then
+            return value
+        end
+        return nil
+    end
+
+    local minValue = readField("minValue", "GetMinValue")
+    local maxValue = readField("maxValue", "GetMaxValue")
+    local steps = readField("steps", "GetSteps") or readField("stepValue", "GetStepValue")
+
+    if minValue ~= nil or maxValue ~= nil or steps ~= nil then
+        print(PREFIX .. string.format("    range: min=%s max=%s steps=%s",
+            tostring(minValue), tostring(maxValue), tostring(steps)))
+        return
+    end
+
+    -- No slider range found -- confirmed live (2026-07-03) on cameraSmoothStyle that a
+    -- `kind = "number"` row can still be dropdown-backed: its options table is a plain array
+    -- of entries (options[1], options[2], ...) instead of a min/max/steps record. That's a
+    -- signal the registry entry likely belongs to `kind = "enum"`, not `kind = "number"`.
+    if options[1] ~= nil then
+        print(PREFIX .. string.format("    dropdown-style options (%d entries):", #options))
+        for i, entry in ipairs(options) do
+            if type(entry) == "table" then
+                local parts = {}
+                for k, v in pairs(entry) do
+                    if type(v) ~= "function" then
+                        table.insert(parts, tostring(k) .. "=" .. tostring(v))
+                    end
+                end
+                print(PREFIX .. "      [" .. i .. "] " .. table.concat(parts, ", "))
+            else
+                print(PREFIX .. "      [" .. i .. "] " .. tostring(entry))
+            end
+        end
+        return
+    end
+
+    local keys = {}
+    for k in pairs(options) do table.insert(keys, tostring(k)) end
+    print(ERROR_PREFIX .. "    options table found but no known min/max/steps accessor. Keys: " ..
+        table.concat(keys, ", "))
+end
+
 local function dumpRow(frame, index)
     local data = frame and frame.data
     if data == nil then
@@ -384,6 +491,10 @@ local function dumpRow(frame, index)
             tostring(settingName(data.setting, data) or "?"),
             tostring(variable),
             tostring(settingValue(data.setting))))
+        local known = settingByVariable[variable]
+        if known and known.kind == "number" then
+            dumpOptionsRange(data)
+        end
     else
         print(ERROR_PREFIX .. string.format("  %s -> not CVar-backed (no data.setting:GetVariable())",
             tostring(data.name or "?")))
