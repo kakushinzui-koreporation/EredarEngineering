@@ -104,6 +104,64 @@ COMMAND_HANDLERS["days"] = function(arguments)
     ))
 end
 
+-- Repairs paid where the addon could not see them land as uncategorised
+-- spending, and no amount of fixing the detector recovers a day already
+-- recorded. This reclassifies spending the player knows the truth about,
+-- and refuses to invent any: it can only move money already spent that day.
+COMMAND_HANDLERS["repairs"] = function(arguments)
+    local Database = TreasuryTimeline.Database
+    local Formatting = TreasuryTimeline.Formatting
+
+    local dayKey = arguments[2]
+    local amountArgument = arguments[3]
+
+    if not dayKey or not amountArgument then
+        TreasuryTimeline:Print("Usage: |cFFFFFFFF/treasury repairs <YYYY-MM-DD> <gold|all>|r")
+        return
+    end
+
+    local characterRecord = Database:GetCharacterRecord()
+    local dayRecord = characterRecord.days[dayKey]
+
+    if not dayRecord then
+        TreasuryTimeline:Print("No record for " .. dayKey .. " on this character.")
+        return
+    end
+
+    local requestedCopper
+    if amountArgument == "all" then
+        requestedCopper = dayRecord.spentCopper
+    else
+        local gold = tonumber(amountArgument)
+        if not gold then
+            TreasuryTimeline:Print("Give an amount in gold, or |cFFFFFFFFall|r.")
+            return
+        end
+        requestedCopper = math.floor(gold * 10000)
+    end
+
+    if requestedCopper > dayRecord.spentCopper then
+        TreasuryTimeline:Print(string.format(
+            "|cFFE05050That day only spent %s, so it cannot have repaired more.|r",
+            Formatting:FormatCopper(dayRecord.spentCopper)
+        ))
+        return
+    end
+
+    dayRecord.repairCopper = requestedCopper
+
+    TreasuryTimeline:Print(string.format(
+        "%s: |cFFF29E33%s|r of the %s spent is now filed as repairs.",
+        dayKey,
+        Formatting:FormatCopper(requestedCopper),
+        Formatting:FormatCopper(dayRecord.spentCopper)
+    ))
+
+    if TreasuryTimeline.ChartFrame:IsShown() then
+        TreasuryTimeline.ChartFrame:Refresh()
+    end
+end
+
 COMMAND_HANDLERS["characters"] = function()
     local store = TreasuryTimeline.Database:GetStore()
     local DailySeries = TreasuryTimeline.DailySeries
@@ -148,6 +206,7 @@ COMMAND_HANDLERS["help"] = function()
     TreasuryTimeline:Print("|cFFFFFFFF/treasury today|r prints what today earned, spent and repaired.")
     TreasuryTimeline:Print("|cFFFFFFFF/treasury days <count>|r prints one line per day plus the range total.")
     TreasuryTimeline:Print("|cFFFFFFFF/treasury characters|r prints the gold each character is carrying.")
+    TreasuryTimeline:Print("|cFFFFFFFF/treasury repairs <YYYY-MM-DD> <gold|all>|r refiles a day's spending as repairs.")
     TreasuryTimeline:Print("|cFFFFFFFF/treasury reset confirm|r erases the whole history.")
 end
 
