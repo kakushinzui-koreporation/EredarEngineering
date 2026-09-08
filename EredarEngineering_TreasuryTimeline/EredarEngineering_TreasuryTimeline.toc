@@ -1,0 +1,18 @@
+## Interface: 120100
+## Title: Eredar Engineering |cFFFFD100Treasury Timeline|r
+## Notes: Records how much gold each character gains or loses per day and separates what repairs cost you. Draws a bar per day, and the week starts at the realm reset rather than at midnight. Type /treasury.
+## Author: Kakushinzui Koreporation
+## Version: 0.2.0
+## IconTexture: Interface\Icons\INV_Misc_Coin_01
+## RequiredDeps: EredarEngineering
+## SavedVariables: TreasuryTimelineDB
+
+TreasuryTimeline.lua
+
+source/Money/Formatting.lua
+source/Database/Main.lua
+source/Reporting/DailySeries.lua
+source/Money/Repairs.lua
+source/Money/Tracker.lua
+source/UserInterface/ChartFrame.lua
+source/SlashCommands/Main.lua
