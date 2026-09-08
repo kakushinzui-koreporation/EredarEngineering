@@ -120,8 +120,19 @@ local COMMAND_HANDLERS = {
         DragonRacing.InterfaceBlackout:Restore()
     end,
 
+    -- Rehearses both halves of a real race. Testing the blackout without the
+    -- panel proves nothing, because whether the panel survives the blackout is
+    -- the entire question.
     blackout = function()
-        DragonRacing.InterfaceBlackout:Toggle()
+        if DragonRacing.InterfaceBlackout.hidden then
+            DragonRacing.InterfaceBlackout:Restore()
+            DragonRacing.RaceDisplay:Hide()
+            return
+        end
+
+        DragonRacing.RaceDisplay:Show()
+        DragonRacing.InterfaceBlackout:Hide()
+        DragonRacing:Print("Rehearsing race mode. |cFFFFFFFFAlt+Z|r brings the interface back.")
     end,
 
     keep = function()
