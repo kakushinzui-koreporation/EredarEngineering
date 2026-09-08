@@ -152,7 +152,7 @@ function ChartFrame:ShowDayTooltip(column, dayTotals)
     GameTooltip:AddDoubleLine("Spent", Formatting:FormatCopper(dayTotals.spentCopper), 0.8, 0.8, 0.8, 1, 1, 1)
     GameTooltip:AddDoubleLine("Repairs", Formatting:FormatCopper(dayTotals.repairCopper), 0.95, 0.62, 0.2, 1, 1, 1)
     GameTooltip:AddDoubleLine("Net", Formatting:FormatSignedCopper(dayTotals.netCopper), 0.8, 0.8, 0.8, 1, 1, 1)
-    GameTooltip:AddDoubleLine("Balance at close", Formatting:FormatCopper(dayTotals.closingCopper), 0.8, 0.8, 0.8, 1, 1, 1)
+    GameTooltip:AddDoubleLine("Gold when that day ended", Formatting:FormatCopper(dayTotals.closingCopper), 0.8, 0.8, 0.8, 1, 1, 1)
     GameTooltip:Show()
 end
 
