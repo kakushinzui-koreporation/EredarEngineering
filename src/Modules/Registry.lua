@@ -16,6 +16,13 @@ local MODULE_ORDER = {
             .. " achievements, reading every threshold from the client. Adds lines to gear and"
             .. " crest tooltips. Type /crestplanner.",
     },
+    {
+        key = "dragonRacing",
+        title = "Dragon Racing",
+        description = "During a race, shows only vigor charges and the Whirling Surge cooldown."
+            .. " Detects the race from the Racing aura and learns its spell identifier the first"
+            .. " time it sees it.",
+    },
 }
 
 Registry.Order = MODULE_ORDER
