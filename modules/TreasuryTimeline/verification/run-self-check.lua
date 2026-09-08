@@ -95,6 +95,36 @@ check(
     "closing balance equals opening plus earned minus spent"
 )
 
+local gapsBefore = Database:FindContinuityGaps()
+check(#gapsBefore == 0, "a single unbroken day reports no continuity gap")
+
+Database:GetCharacterRecord().days["2026-01-01"] = {
+    openingCopper = 1000, closingCopper = 900, earnedCopper = 0, spentCopper = 100, repairCopper = 0,
+}
+Database:GetCharacterRecord().days["2026-01-02"] = {
+    openingCopper = 800, closingCopper = 800, earnedCopper = 0, spentCopper = 0, repairCopper = 0,
+}
+local function gapAfter(dayKey)
+    for _, candidate in ipairs(Database:FindContinuityGaps()) do
+        if candidate.afterDayKey == dayKey then return candidate end
+    end
+    return nil
+end
+
+local syntheticGap = gapAfter("2026-01-01")
+check(syntheticGap ~= nil, "a step between one day closing and the next opening is found")
+check(syntheticGap.copper == -100, "the gap reports the size and direction of the step")
+check(syntheticGap.beforeDayKey == "2026-01-02", "the gap names the day it lands on")
+
+Database:AbsorbGap(syntheticGap)
+local absorbed = Database:GetCharacterRecord().days["2026-01-02"]
+check(absorbed.spentCopper == 100, "a negative gap is folded in as spending")
+check(absorbed.openingCopper == 900, "absorbing lines the opening up with the previous close")
+check(gapAfter("2026-01-01") == nil, "no gap survives being absorbed")
+
+Database:GetCharacterRecord().days["2026-01-01"] = nil
+Database:GetCharacterRecord().days["2026-01-02"] = nil
+
 local reconciledDifference = Database:Reconcile(STARTING_COPPER + 700 - 5000)
 check(reconciledDifference == -5000, "a balance drop that happened while logged out reconciles as a spend")
 check(Database:GetTodayRecord().spentCopper == 5300, "the unobserved drop joins the day spent total")

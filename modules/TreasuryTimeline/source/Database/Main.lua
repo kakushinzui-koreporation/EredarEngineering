@@ -200,6 +200,56 @@ function Database:GetTodayRecord()
     return dayRecord
 end
 
+-- Money that moved while nothing was watching leaves no trace inside any day,
+-- only a step between one day's close and the next day's open. A crash, a
+-- disabled module or an addon rename all produce it, and none of them announce
+-- themselves, so the gap has to be looked for deliberately.
+function Database:FindContinuityGaps(characterRecord)
+    characterRecord = characterRecord or self.characterRecord
+
+    local dayKeys = {}
+    for dayKey in pairs(characterRecord.days) do
+        dayKeys[#dayKeys + 1] = dayKey
+    end
+    table.sort(dayKeys)
+
+    local gaps = {}
+
+    for index = 2, #dayKeys do
+        local previousDay = characterRecord.days[dayKeys[index - 1]]
+        local currentDay = characterRecord.days[dayKeys[index]]
+        local step = currentDay.openingCopper - previousDay.closingCopper
+
+        if step ~= 0 then
+            gaps[#gaps + 1] = {
+                afterDayKey = dayKeys[index - 1],
+                beforeDayKey = dayKeys[index],
+                copper = step,
+            }
+        end
+    end
+
+    return gaps
+end
+
+-- Folds an unexplained step into the day it lands on, so the ledger reads
+-- continuously again. It is filed as earned or spent with no category, since
+-- that is precisely the extent of what is known about it.
+function Database:AbsorbGap(gap)
+    local dayRecord = self.characterRecord.days[gap.beforeDayKey]
+    if not dayRecord then return false end
+
+    if gap.copper < 0 then
+        dayRecord.spentCopper = dayRecord.spentCopper + (-gap.copper)
+    else
+        dayRecord.earnedCopper = dayRecord.earnedCopper + gap.copper
+    end
+
+    dayRecord.openingCopper = dayRecord.openingCopper - gap.copper
+
+    return true
+end
+
 local function applyBalance(self, currentCopper)
     self.characterRecord.currentCopper = currentCopper
     self.characterRecord.lastSeenAt = time()

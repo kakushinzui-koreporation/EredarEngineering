@@ -162,6 +162,42 @@ COMMAND_HANDLERS["repairs"] = function(arguments)
     end
 end
 
+COMMAND_HANDLERS["audit"] = function(arguments)
+    local Database = TreasuryTimeline.Database
+    local Formatting = TreasuryTimeline.Formatting
+
+    local gaps = Database:FindContinuityGaps()
+
+    if #gaps == 0 then
+        TreasuryTimeline:Print("|cFF40BF40Every day closes where the next one opens.|r")
+        return
+    end
+
+    for _, gap in ipairs(gaps) do
+        TreasuryTimeline:Print(string.format(
+            "|cFFF29E33%s|r moved between %s closing and %s opening, recorded in neither.",
+            Formatting:FormatSignedCopper(gap.copper),
+            gap.afterDayKey,
+            gap.beforeDayKey
+        ))
+    end
+
+    if arguments[2] ~= "fix" then
+        TreasuryTimeline:Print("Run |cFFFFFFFF/treasury audit fix|r to fold these into the day they land on.")
+        return
+    end
+
+    for _, gap in ipairs(gaps) do
+        Database:AbsorbGap(gap)
+    end
+
+    TreasuryTimeline:Print(string.format("Folded %d gap(s) in. The ledger reads continuously now.", #gaps))
+
+    if TreasuryTimeline.ChartFrame:IsShown() then
+        TreasuryTimeline.ChartFrame:Refresh()
+    end
+end
+
 COMMAND_HANDLERS["characters"] = function()
     local store = TreasuryTimeline.Database:GetStore()
     local DailySeries = TreasuryTimeline.DailySeries
@@ -206,6 +242,7 @@ COMMAND_HANDLERS["help"] = function()
     TreasuryTimeline:Print("|cFFFFFFFF/treasury today|r prints what today earned, spent and repaired.")
     TreasuryTimeline:Print("|cFFFFFFFF/treasury days <count>|r prints one line per day plus the range total.")
     TreasuryTimeline:Print("|cFFFFFFFF/treasury characters|r prints the gold each character is carrying.")
+    TreasuryTimeline:Print("|cFFFFFFFF/treasury audit|r finds money that moved while nothing was watching.")
     TreasuryTimeline:Print("|cFFFFFFFF/treasury repairs <YYYY-MM-DD> <gold|all>|r refiles a day's spending as repairs.")
     TreasuryTimeline:Print("|cFFFFFFFF/treasury reset confirm|r erases the whole history.")
 end
