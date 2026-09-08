@@ -79,6 +79,14 @@ function RaceDisplay:Build()
     frame:SetFrameStrata("HIGH")
     frame:Hide()
 
+    local background = frame:CreateTexture(nil, "BACKGROUND")
+    background:SetAllPoints(frame)
+    background:SetColorTexture(0, 0, 0, 0.55)
+
+    frame.title = frame:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+    frame.title:SetPoint("BOTTOM", frame, "TOP", 0, 2)
+    frame.title:SetText("|cFF63C5DARace|r")
+
     frame.vigorText = frame:CreateFontString(nil, "OVERLAY", "GameFontNormalHuge")
     frame.vigorText:SetPoint("TOP", frame, "TOP", 0, 0)
 
