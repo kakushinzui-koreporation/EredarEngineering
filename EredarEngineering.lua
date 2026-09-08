@@ -4,16 +4,25 @@ _G.EredarEngineering = _G.EredarEngineering or {}
 
 local addonFrame = CreateFrame("Frame")
 addonFrame:RegisterEvent("ADDON_LOADED")
-addonFrame:RegisterEvent("PLAYER_ENTERING_WORLD")
-addonFrame:SetScript("OnEvent", function(self, event, addonName)
-    if event == "PLAYER_ENTERING_WORLD" then
-        EredarEngineering.EngineeringToolsFrame:Toggle()
-        self:UnregisterEvent("PLAYER_ENTERING_WORLD")
-        return
-    end
+addonFrame:RegisterEvent("PLAYER_LOGIN")
 
+local BOOTSTRAP_HANDLERS = {}
+
+addonFrame:SetScript("OnEvent", function(self, event, ...)
+    BOOTSTRAP_HANDLERS[event](self, ...)
+end)
+
+BOOTSTRAP_HANDLERS.PLAYER_LOGIN = function(self)
+    EredarEngineering.Modules:StartEnabledModules()
+    self:UnregisterEvent("PLAYER_LOGIN")
+end
+
+BOOTSTRAP_HANDLERS.ADDON_LOADED = function(self, addonName)
     if addonName ~= "EredarEngineering" then return end
 
+    if type(_G.EredarEngineeringDB) ~= "table" then
+        _G.EredarEngineeringDB = {}
+    end
 
     local WoWSettings = Settings
 
@@ -44,8 +53,10 @@ addonFrame:SetScript("OnEvent", function(self, event, addonName)
     addonLayout:AddInitializer(actionBarsButtonInitializer)
     addonLayout:AddInitializer(openToolsButtonInitializer)
 
+    EredarEngineering.ModuleSettingsPanel:Build(settingsCategory)
+
     self:UnregisterEvent("ADDON_LOADED")
-end)
+end
 
 function EredarEngineering:CreateModule()
     local module = {}

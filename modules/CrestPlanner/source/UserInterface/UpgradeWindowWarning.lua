@@ -110,6 +110,7 @@ local function wholeCharacterSummary()
 end
 
 function UpgradeWindowWarning:Refresh()
+    if not CrestPlanner.enabled then return end
     local upgradeFrame = _G.ItemUpgradeFrame
     if not upgradeFrame or not upgradeFrame:IsShown() then return end
 

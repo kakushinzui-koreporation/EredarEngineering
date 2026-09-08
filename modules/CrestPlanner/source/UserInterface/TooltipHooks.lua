@@ -60,6 +60,7 @@ local STATUS_LINES = {
 }
 
 function TooltipHooks:AddEquipmentLines(tooltip, slotIdentifier)
+    if not CrestPlanner.enabled then return end
     local slotPlan = CrestPlanner.Plan:PlanForSlot(slotIdentifier, PLANNED_TRACK)
     if not slotPlan then return end
 
@@ -78,6 +79,7 @@ local COMPARISON_COLORS = {
 }
 
 function TooltipHooks:AddComparisonLines(tooltip, tooltipData)
+    if not CrestPlanner.enabled then return end
     local itemLink = tooltipData and tooltipData.hyperlink
     if not itemLink then return end
 
@@ -96,6 +98,7 @@ function TooltipHooks:AddComparisonLines(tooltip, tooltipData)
 end
 
 function TooltipHooks:AddCrestLines(tooltip, currencyIdentifier)
+    if not CrestPlanner.enabled then return end
     local crest = nil
     for _, candidate in ipairs(CrestPlanner.Crests:Ordered()) do
         if candidate.identifier == currencyIdentifier then
