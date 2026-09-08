@@ -156,9 +156,9 @@ local COMMAND_HANDLERS = {
             tostring(store.whirlingSurgeIdentifier)
         ))
         DragonRacing:Print(string.format(
-            "captures recorded: |cFFFFFFFF%d|r   vigor power type: |cFFFFFFFF%s|r",
+            "captures recorded: |cFFFFFFFF%d|r   learned vigor spell: |cFFFFFFFF%s|r",
             store.captures and #store.captures or 0,
-            tostring(store.vigorPowerType)
+            tostring(store.vigorSpellIdentifier)
         ))
     end,
 

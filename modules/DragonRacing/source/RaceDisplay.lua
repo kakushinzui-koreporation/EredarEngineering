@@ -9,6 +9,13 @@ local UPDATE_INTERVAL_SECONDS = 0.1
 local READY_COLOR = { 0.35, 0.85, 0.45 }
 local COOLING_COLOR = { 0.95, 0.62, 0.20 }
 local CHARGE_COLOR = { 0.85, 0.90, 1.00 }
+local EMPTY_COLOR = { 0.90, 0.35, 0.35 }
+
+-- Vigor is the shared charge pool behind the skyriding movement spells, not a
+-- unit power. Measured across a live race on 2026-09-08: these drained 6 to 0
+-- together while power type 25 sat frozen at its own maximum of 3, which was
+-- the number the panel had been showing all along.
+local VIGOR_SPELL_NAMES = { "Skyward Ascent", "Surge Forward" }
 
 local function findWhirlingSurge()
     local store = DragonRacing:Store()
@@ -38,36 +45,46 @@ local function findWhirlingSurge()
     return nil
 end
 
-local function vigorPowerType()
+local function findVigorSpell()
     local store = DragonRacing:Store()
 
-    if store.vigorPowerType then
-        return store.vigorPowerType
+    if store.vigorSpellIdentifier then
+        return store.vigorSpellIdentifier
     end
 
-    -- Skyriding vigor is an alternate mount power. Rather than name a constant
-    -- that may not exist, take whichever alternate power the client actually
-    -- reports a maximum for while mounted.
-    local candidates = { "AlternateMount", "Alternate", "AlternateEncounter" }
+    for actionSlot = 1, 180 do
+        local actionType, identifier = GetActionInfo(actionSlot)
 
-    for _, candidateName in ipairs(candidates) do
-        local powerType = Enum.PowerType[candidateName]
+        if actionType == "spell" and identifier then
+            local spellInfo = C_Spell.GetSpellInfo(identifier)
 
-        if powerType then
-            -- A power can come back as a secret value, readable but not
-            -- comparable, so the comparison itself has to be guarded.
-            local succeeded, hasMaximum = pcall(function()
-                return UnitPowerMax("player", powerType) > 0
-            end)
-
-            if succeeded and hasMaximum then
-                store.vigorPowerType = powerType
-                return powerType
+            if spellInfo then
+                for _, candidateName in ipairs(VIGOR_SPELL_NAMES) do
+                    if spellInfo.name == candidateName then
+                        store.vigorSpellIdentifier = identifier
+                        DragonRacing:Print(string.format(
+                            "Learned vigor from %s: spell |cFFFFFFFF%d|r.",
+                            candidateName,
+                            identifier
+                        ))
+                        return identifier
+                    end
+                end
             end
         end
     end
 
     return nil
+end
+
+local function readVigorCharges()
+    local identifier = findVigorSpell()
+    if not identifier then return nil end
+
+    local charges = C_Spell.GetSpellCharges and C_Spell.GetSpellCharges(identifier)
+    if not charges or not charges.maxCharges then return nil end
+
+    return charges.currentCharges, charges.maxCharges
 end
 
 function RaceDisplay:Build()
@@ -104,19 +121,13 @@ function RaceDisplay:Refresh()
     local frame = self.frame
     if not frame or not frame:IsShown() then return end
 
-    local powerType = vigorPowerType()
+    local currentCharges, maximumCharges = readVigorCharges()
 
-    local succeeded, vigorText = false, nil
+    if currentCharges and maximumCharges then
+        frame.vigorText:SetFormattedText("%d / %d", currentCharges, maximumCharges)
 
-    if powerType then
-        succeeded, vigorText = pcall(function()
-            return string.format("%d / %d", UnitPower("player", powerType), UnitPowerMax("player", powerType))
-        end)
-    end
-
-    if succeeded then
-        frame.vigorText:SetText(vigorText)
-        frame.vigorText:SetTextColor(CHARGE_COLOR[1], CHARGE_COLOR[2], CHARGE_COLOR[3])
+        local colour = currentCharges == 0 and EMPTY_COLOR or CHARGE_COLOR
+        frame.vigorText:SetTextColor(colour[1], colour[2], colour[3])
     else
         frame.vigorText:SetText("vigor unreadable")
         frame.vigorText:SetTextColor(0.6, 0.6, 0.6)
