@@ -4,20 +4,29 @@ _G.EredarEngineering = _G.EredarEngineering or {}
 
 local addonFrame = CreateFrame("Frame")
 addonFrame:RegisterEvent("ADDON_LOADED")
-addonFrame:RegisterEvent("PLAYER_ENTERING_WORLD")
-addonFrame:SetScript("OnEvent", function(self, event, addonName)
-    if event == "PLAYER_ENTERING_WORLD" then
-        EredarEngineering.EngineeringToolsFrame:Toggle()
-        self:UnregisterEvent("PLAYER_ENTERING_WORLD")
-        return
-    end
+addonFrame:RegisterEvent("PLAYER_LOGIN")
 
+local BOOTSTRAP_HANDLERS = {}
+
+addonFrame:SetScript("OnEvent", function(self, event, ...)
+    BOOTSTRAP_HANDLERS[event](self, ...)
+end)
+
+BOOTSTRAP_HANDLERS.PLAYER_LOGIN = function(self)
+    EredarEngineering.Modules:StartEnabledModules()
+    self:UnregisterEvent("PLAYER_LOGIN")
+end
+
+BOOTSTRAP_HANDLERS.ADDON_LOADED = function(self, addonName)
     if addonName ~= "EredarEngineering" then return end
 
+    if type(_G.EredarEngineeringDB) ~= "table" then
+        _G.EredarEngineeringDB = {}
+    end
 
     local WoWSettings = Settings
 
-    local settingsCategory = WoWSettings.RegisterVerticalLayoutCategory("Artificer Engineering")
+    local settingsCategory = WoWSettings.RegisterVerticalLayoutCategory("Eredar Engineering")
     WoWSettings.RegisterAddOnCategory(settingsCategory)
 
     local actionBarsButtonInitializer = CreateSettingsButtonInitializer(
@@ -44,8 +53,10 @@ addonFrame:SetScript("OnEvent", function(self, event, addonName)
     addonLayout:AddInitializer(actionBarsButtonInitializer)
     addonLayout:AddInitializer(openToolsButtonInitializer)
 
+    EredarEngineering.ModuleSettingsPanel:Build(settingsCategory)
+
     self:UnregisterEvent("ADDON_LOADED")
-end)
+end
 
 function EredarEngineering:CreateModule()
     local module = {}
@@ -53,22 +64,9 @@ function EredarEngineering:CreateModule()
     return module
 end
 
-SLASH_PING_COMMAND1 = "/ping-eredar-tools"
-
-local function pingCommandHandler(msg, editBox)
-    print("Ping from EredarEngineering Addon! - Addon is installed!")
-end
-
-SlashCmdList["PING_COMMAND"] = pingCommandHandler
-
-if not _G.EredarEngineering then
-    print("|cFFFF0000[EredarEngineering]|r MAIN MODULE not found.")
-    return
-end
-
+-- Deliberate shorthand, not an oversight: the tools panel is opened often
+-- enough that two keystrokes earn their obscurity.
 SLASH_DEV_COMMAND1 = "/zz"
-
-
 
 local function devCommandHandler(msg, editBox)
     EredarEngineering.EngineeringToolsFrame:Toggle()
