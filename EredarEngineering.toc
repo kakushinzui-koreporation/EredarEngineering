@@ -63,5 +63,6 @@ modules/CrestPlanner/source/Reconnaissance/CraftingOrderProbe.lua
 modules/CrestPlanner/source/SlashCommands/Main.lua
 
 modules/DragonRacing/DragonRacing.lua
+modules/DragonRacing/source/InterfaceBlackout.lua
 modules/DragonRacing/source/RaceProbe.lua
 modules/DragonRacing/source/RaceDisplay.lua

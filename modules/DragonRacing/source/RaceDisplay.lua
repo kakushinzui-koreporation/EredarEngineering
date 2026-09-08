@@ -73,9 +73,11 @@ end
 function RaceDisplay:Build()
     if self.frame then return self.frame end
 
-    local frame = CreateFrame("Frame", "EredarEngineeringRaceDisplay", UIParent)
+    -- Parented to WorldFrame on purpose: hiding UIParent during a race takes
+    -- every child with it, and this panel is the one thing that must survive.
+    local frame = CreateFrame("Frame", "EredarEngineeringRaceDisplay", WorldFrame)
     frame:SetSize(200, 70)
-    frame:SetPoint("CENTER", UIParent, "CENTER", 0, -180)
+    frame:SetPoint("CENTER", WorldFrame, "CENTER", 0, -180)
     frame:SetFrameStrata("HIGH")
     frame:Hide()
 

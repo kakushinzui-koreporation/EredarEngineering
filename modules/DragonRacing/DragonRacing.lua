@@ -99,9 +99,11 @@ function DragonRacing:OnAuraChanged()
     end
 
     if racing then
+        self.InterfaceBlackout:Hide()
         self.RaceDisplay:Show()
         captureQuietly("raceStarted")
     else
+        self.InterfaceBlackout:Restore()
         self.RaceDisplay:Hide()
         captureQuietly("raceEnded")
     end
@@ -115,6 +117,19 @@ local COMMAND_HANDLERS = {
 
     hide = function()
         DragonRacing.RaceDisplay:Hide()
+        DragonRacing.InterfaceBlackout:Restore()
+    end,
+
+    blackout = function()
+        DragonRacing.InterfaceBlackout:Toggle()
+    end,
+
+    keep = function()
+        DragonRacing.InterfaceBlackout:SetWanted(not DragonRacing.InterfaceBlackout:IsWanted())
+        DragonRacing:Print(string.format(
+            "Clearing the interface during a race: |cFFFFFFFF%s|r",
+            tostring(DragonRacing.InterfaceBlackout:IsWanted())
+        ))
     end,
 
     status = function()
@@ -135,6 +150,7 @@ local COMMAND_HANDLERS = {
     end,
 
     probe = function()
+        DragonRacing.InterfaceBlackout:Restore()
         DragonRacing.RaceProbe:Capture("manual")
         DragonRacing:Print("Captured. Run |cFFFFFFFF/reload|r so it lands on disk.")
     end,
@@ -189,6 +205,7 @@ function DragonRacing:Disable()
     end
 
     self.RaceDisplay:Hide()
+    self.InterfaceBlackout:Restore()
 
     self.enabled = false
     self.wasRacing = false
