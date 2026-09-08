@@ -5,6 +5,68 @@ DragonRacing.InterfaceBlackout = InterfaceBlackout
 
 local SAFETY_CHECK_SECONDS = 2
 
+-- Blizzard's own race widgets are the one part of the interface the Paladin
+-- wants left on screen. Hiding UIParent takes them with it, so they are lifted
+-- out to WorldFrame for the duration and put back exactly where they were.
+-- Confirmed visible mid-race by the probe on 2026-09-08.
+local RACE_WIDGET_FRAMES = {
+    "UIWidgetTopCenterContainerFrame",
+    "UIWidgetBelowMinimapContainerFrame",
+    "UIWidgetPowerBarContainerFrame",
+}
+
+local function liftRaceWidgets(self)
+    self.liftedWidgets = {}
+
+    for _, frameName in ipairs(RACE_WIDGET_FRAMES) do
+        local frame = _G[frameName]
+
+        if frame and frame:IsShown() then
+            local lifted = pcall(function()
+                local point, _, relativePoint, offsetX, offsetY = frame:GetPoint()
+
+                self.liftedWidgets[frameName] = {
+                    parent = frame:GetParent(),
+                    point = point,
+                    relativePoint = relativePoint,
+                    offsetX = offsetX,
+                    offsetY = offsetY,
+                }
+
+                frame:SetParent(WorldFrame)
+
+                if point then
+                    frame:ClearAllPoints()
+                    frame:SetPoint(point, WorldFrame, relativePoint, offsetX, offsetY)
+                end
+            end)
+
+            if not lifted then
+                self.liftedWidgets[frameName] = nil
+            end
+        end
+    end
+end
+
+local function lowerRaceWidgets(self)
+    for frameName, saved in pairs(self.liftedWidgets or {}) do
+        local frame = _G[frameName]
+
+        if frame and saved.parent then
+            pcall(function()
+                frame:SetParent(saved.parent)
+
+                if saved.point then
+                    frame:ClearAllPoints()
+                    frame:SetPoint(saved.point, saved.parent, saved.relativePoint, saved.offsetX, saved.offsetY)
+                end
+            end)
+        end
+    end
+
+    self.liftedWidgets = nil
+end
+
 -- Hiding UIParent is the only move that clears third-party addons too, which a
 -- list of Blizzard frame names never would. It also takes the chat with it, so
 -- every path back out of this state has to be automatic.

@@ -99,10 +99,12 @@ function DragonRacing:OnAuraChanged()
     end
 
     if racing then
+        self.RaceProbe:StartMidRaceSampling()
         self.InterfaceBlackout:Hide()
         self.RaceDisplay:Show()
         captureQuietly("raceStarted")
     else
+        self.RaceProbe:StopMidRaceSampling()
         self.InterfaceBlackout:Restore()
         self.RaceDisplay:Hide()
         captureQuietly("raceEnded")
