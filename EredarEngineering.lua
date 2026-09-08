@@ -26,7 +26,7 @@ BOOTSTRAP_HANDLERS.ADDON_LOADED = function(self, addonName)
 
     local WoWSettings = Settings
 
-    local settingsCategory = WoWSettings.RegisterVerticalLayoutCategory("Artificer Engineering")
+    local settingsCategory = WoWSettings.RegisterVerticalLayoutCategory("Eredar Engineering")
     WoWSettings.RegisterAddOnCategory(settingsCategory)
 
     local actionBarsButtonInitializer = CreateSettingsButtonInitializer(
