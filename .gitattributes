@@ -1,0 +1,10 @@
+# Line endings belong to the repository, not to the machine that checks it
+# out. With no rule here, core.autocrlf decides, and on a Windows checkout it
+# decides CRLF for everything.
+
+* text=auto
+
+# Bash reads a trailing carriage return as part of the command, not as
+# whitespace, so a CRLF checkout of these arrives already broken:
+# "cd: .../EredarEngineering\r: No such file or directory".
+*.sh text eol=lf

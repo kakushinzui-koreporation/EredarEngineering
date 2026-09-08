@@ -1,12 +1,15 @@
 ## Interface: 120007, 120100
 ## Title: EredarEngineering
-## Version: 0.1.0-alpha
+## Version: 0.2.0
 ## Notes: Argus > Artificer Yvel > Learn Eredar Engineering
 ## Author: Kakushinzui Koreporation
 ## IconTexture: Interface\Icons\Trade_Engineering
-## SavedVariables: EredarEngineeringDB
+## SavedVariables: EredarEngineeringDB, TreasuryTimelineDB, CrestPlannerDB
 
 EredarEngineering.lua
+
+src/Modules/Registry.lua
+src/Modules/SettingsPanel.lua
 
 src/Database/Main.lua
 src/Database/CharacterClasses.lua
@@ -32,8 +35,34 @@ src/EditMode/Main.lua
 
 src/SlashCommands/Main.lua
 
-# --- Notes ---
-# The `## Interface:` value must match the client. Run in-game:
-#   /run print(select(4, GetBuildInfo()))
-# Listing two values (120007, 120100) keeps the addon compatible across both patches,
-# matching how other addons declare theirs.
+modules/TreasuryTimeline/TreasuryTimeline.lua
+modules/TreasuryTimeline/source/Money/Formatting.lua
+modules/TreasuryTimeline/source/Database/Main.lua
+modules/TreasuryTimeline/source/Reporting/DailySeries.lua
+modules/TreasuryTimeline/source/Money/Repairs.lua
+modules/TreasuryTimeline/source/Money/Tracker.lua
+modules/TreasuryTimeline/source/UserInterface/ChartFrame.lua
+modules/TreasuryTimeline/source/SlashCommands/Main.lua
+
+modules/CrestPlanner/CrestPlanner.lua
+modules/CrestPlanner/source/Model/Crests.lua
+modules/CrestPlanner/source/Model/Equipment.lua
+modules/CrestPlanner/source/Model/UpgradeCost.lua
+modules/CrestPlanner/source/Model/SpendLog.lua
+modules/CrestPlanner/source/Model/Commitments.lua
+modules/CrestPlanner/source/Planning/Plan.lua
+modules/CrestPlanner/source/Planning/Comparison.lua
+modules/CrestPlanner/source/Planning/Forecast.lua
+modules/CrestPlanner/source/UserInterface/TooltipHooks.lua
+modules/CrestPlanner/source/UserInterface/UpgradeWindowWarning.lua
+modules/CrestPlanner/source/Reconnaissance/CurrencyProbe.lua
+modules/CrestPlanner/source/Reconnaissance/AchievementProbe.lua
+modules/CrestPlanner/source/Reconnaissance/EquipmentProbe.lua
+modules/CrestPlanner/source/Reconnaissance/UpgradeProbe.lua
+modules/CrestPlanner/source/Reconnaissance/CraftingOrderProbe.lua
+modules/CrestPlanner/source/SlashCommands/Main.lua
+
+modules/DragonRacing/DragonRacing.lua
+modules/DragonRacing/source/InterfaceBlackout.lua
+modules/DragonRacing/source/RaceProbe.lua
+modules/DragonRacing/source/RaceDisplay.lua
