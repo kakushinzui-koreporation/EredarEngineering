@@ -3,7 +3,7 @@ local DragonRacing = _G.DragonRacing
 local RaceProbe = {}
 DragonRacing.RaceProbe = RaceProbe
 
-local MAXIMUM_CAPTURES = 6
+local MAXIMUM_CAPTURES = 24
 local WHIRLING_SURGE_NAME = "Whirling Surge"
 
 local function everyPlayerAura()
@@ -134,6 +134,41 @@ local function whirlingSurgeState()
     return findings
 end
 
+-- Power values come back secret and may not track a live value, so the charges
+-- of the skyriding spells are the alternative reading: charges are plain
+-- numbers. This records every action bar spell that has any, so the one
+-- carrying vigor can be identified instead of guessed.
+local function everySpellWithCharges()
+    local found = {}
+
+    for actionSlot = 1, 180 do
+        local actionType, identifier = GetActionInfo(actionSlot)
+
+        if actionType == "spell" and identifier then
+            local charges = C_Spell.GetSpellCharges and C_Spell.GetSpellCharges(identifier)
+
+            if charges and charges.maxCharges and charges.maxCharges > 0 then
+                local spellInfo = C_Spell.GetSpellInfo(identifier)
+
+                found[#found + 1] = {
+                    actionSlot = actionSlot,
+                    spellIdentifier = identifier,
+                    name = spellInfo and spellInfo.name or "unknown",
+                    currentCharges = charges.currentCharges,
+                    maxCharges = charges.maxCharges,
+                    cooldownDuration = charges.cooldownDuration,
+                }
+            end
+        end
+    end
+
+    if #found == 0 then
+        return "no action bar spell reported charges"
+    end
+
+    return found
+end
+
 local function visibleRaceFrames()
     local candidates = {
         "UIWidgetTopCenterContainerFrame",
@@ -171,10 +206,28 @@ function RaceProbe:Capture(reason)
         powers = guarded("powers", everyPowerType),
         gliding = guarded("gliding", glidingState),
         whirlingSurge = guarded("whirlingSurge", whirlingSurgeState),
+        spellsWithCharges = guarded("spellsWithCharges", everySpellWithCharges),
         frames = guarded("frames", visibleRaceFrames),
     }
 
     while #store.captures > MAXIMUM_CAPTURES do
         table.remove(store.captures, 1)
     end
+end
+
+local MID_RACE_SAMPLE_SECONDS = 3
+
+function RaceProbe:StartMidRaceSampling()
+    if self.sampler then return end
+
+    self.sampler = C_Timer.NewTicker(MID_RACE_SAMPLE_SECONDS, function()
+        RaceProbe:Capture("midRace")
+    end)
+end
+
+function RaceProbe:StopMidRaceSampling()
+    if not self.sampler then return end
+
+    self.sampler:Cancel()
+    self.sampler = nil
 end
