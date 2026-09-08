@@ -6,6 +6,7 @@ TreasuryTimeline.Tracker = Tracker
 local TRACKED_EVENTS = {
     "PLAYER_MONEY",
     "MERCHANT_SHOW",
+    "MERCHANT_UPDATE",
     "MERCHANT_CLOSED",
     "UPDATE_INVENTORY_DURABILITY",
 }
@@ -16,6 +17,10 @@ local EVENT_HANDLERS = {
     end,
 
     MERCHANT_SHOW = function()
+        TreasuryTimeline.Repairs:OnMerchantShow()
+    end,
+
+    MERCHANT_UPDATE = function()
         TreasuryTimeline.Repairs:OnMerchantShow()
     end,
 

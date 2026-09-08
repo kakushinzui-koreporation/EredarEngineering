@@ -43,7 +43,15 @@ function Repairs:RefreshPendingCost()
         return
     end
 
-    self.lastKnownRepairCost = GetRepairAllCost() or 0
+    local currentCost = GetRepairAllCost() or 0
+
+    -- MERCHANT_SHOW can arrive before the vendor's data does, reporting zero for
+    -- a repair that is about to be paid. While the vendor stays open the cached
+    -- figure only ever rises: a real drop means the repair went through, and
+    -- that is claimed from the money change instead of from here.
+    if currentCost > self.lastKnownRepairCost then
+        self.lastKnownRepairCost = currentCost
+    end
 end
 
 function Repairs:OnMerchantShow()

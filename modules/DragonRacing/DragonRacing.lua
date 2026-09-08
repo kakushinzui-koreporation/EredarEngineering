@@ -86,12 +86,68 @@ function DragonRacing:OnAuraChanged()
 
     self.wasRacing = racing
 
+    -- The display is the point of the module and the probe is a passenger, so a
+    -- failing probe must never keep the display from appearing mid-race.
+    local function captureQuietly(reason)
+        local succeeded, failure = pcall(function()
+            DragonRacing.RaceProbe:Capture(reason)
+        end)
+
+        if not succeeded then
+            DragonRacing:Print("|cFFE05050The probe failed but the display is unaffected:|r " .. tostring(failure))
+        end
+    end
+
     if racing then
-        self.RaceProbe:Capture("raceStarted")
         self.RaceDisplay:Show()
+        captureQuietly("raceStarted")
     else
-        self.RaceProbe:Capture("raceEnded")
         self.RaceDisplay:Hide()
+        captureQuietly("raceEnded")
+    end
+end
+
+local COMMAND_HANDLERS = {
+    show = function()
+        DragonRacing.RaceDisplay:Show()
+        DragonRacing:Print("Display forced on. Use |cFFFFFFFF/dragonracing hide|r to put it away.")
+    end,
+
+    hide = function()
+        DragonRacing.RaceDisplay:Hide()
+    end,
+
+    status = function()
+        local racingAura = DragonRacing:FindRacingAura()
+        local store = DragonRacing:Store()
+
+        DragonRacing:Print(string.format(
+            "racing now: |cFFFFFFFF%s|r   learned racing aura: |cFFFFFFFF%s|r   learned Whirling Surge: |cFFFFFFFF%s|r",
+            tostring(racingAura ~= nil),
+            tostring(store.racingAuraIdentifier),
+            tostring(store.whirlingSurgeIdentifier)
+        ))
+        DragonRacing:Print(string.format(
+            "captures recorded: |cFFFFFFFF%d|r   vigor power type: |cFFFFFFFF%s|r",
+            store.captures and #store.captures or 0,
+            tostring(store.vigorPowerType)
+        ))
+    end,
+
+    probe = function()
+        DragonRacing.RaceProbe:Capture("manual")
+        DragonRacing:Print("Captured. Run |cFFFFFFFF/reload|r so it lands on disk.")
+    end,
+}
+
+function DragonRacing:InitializeSlashCommands()
+    SLASH_DRAGON_RACING1 = "/dragonracing"
+
+    SlashCmdList["DRAGON_RACING"] = function(message)
+        local keyword = string.lower(string.match(message or "", "^%s*(%S*)") or "")
+        local handler = COMMAND_HANDLERS[keyword] or COMMAND_HANDLERS.status
+
+        handler()
     end
 end
 
@@ -113,6 +169,8 @@ function DragonRacing:Enable()
         if event == "UNIT_AURA" and unitTarget ~= "player" then return end
         DragonRacing:OnAuraChanged()
     end)
+
+    self:InitializeSlashCommands()
 
     self.watcherFrame = watcher
     self.wasRacing = false
