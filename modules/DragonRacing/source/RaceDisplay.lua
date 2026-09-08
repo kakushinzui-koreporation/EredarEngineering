@@ -53,9 +53,17 @@ local function vigorPowerType()
     for _, candidateName in ipairs(candidates) do
         local powerType = Enum.PowerType[candidateName]
 
-        if powerType and UnitPowerMax("player", powerType) > 0 then
-            store.vigorPowerType = powerType
-            return powerType
+        if powerType then
+            -- A power can come back as a secret value, readable but not
+            -- comparable, so the comparison itself has to be guarded.
+            local succeeded, hasMaximum = pcall(function()
+                return UnitPowerMax("player", powerType) > 0
+            end)
+
+            if succeeded and hasMaximum then
+                store.vigorPowerType = powerType
+                return powerType
+            end
         end
     end
 
@@ -88,11 +96,16 @@ function RaceDisplay:Refresh()
 
     local powerType = vigorPowerType()
 
-    if powerType then
-        local current = UnitPower("player", powerType)
-        local maximum = UnitPowerMax("player", powerType)
+    local succeeded, vigorText = false, nil
 
-        frame.vigorText:SetText(string.format("%d / %d", current, maximum))
+    if powerType then
+        succeeded, vigorText = pcall(function()
+            return string.format("%d / %d", UnitPower("player", powerType), UnitPowerMax("player", powerType))
+        end)
+    end
+
+    if succeeded then
+        frame.vigorText:SetText(vigorText)
         frame.vigorText:SetTextColor(CHARGE_COLOR[1], CHARGE_COLOR[2], CHARGE_COLOR[3])
     else
         frame.vigorText:SetText("vigor unreadable")

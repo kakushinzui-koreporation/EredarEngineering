@@ -29,19 +29,48 @@ local function everyPlayerAura()
     return auras
 end
 
+-- WoW hands addon code "secret values" for some powers. They read back fine but
+-- comparing one throws, so every reading is isolated: a probe exists to survey
+-- unknown ground and must record what it cannot touch instead of dying on it.
+local function readPower(powerType)
+    local succeeded, current = pcall(UnitPower, "player", powerType)
+    if not succeeded then
+        return nil, nil, "UnitPower threw: " .. tostring(current)
+    end
+
+    local maximumSucceeded, maximum = pcall(UnitPowerMax, "player", powerType)
+    if not maximumSucceeded then
+        return nil, nil, "UnitPowerMax threw: " .. tostring(maximum)
+    end
+
+    local comparable, isWorthKeeping = pcall(function()
+        return (current and current > 0) or (maximum and maximum > 0)
+    end)
+
+    if not comparable then
+        return current, maximum, "secret value, readable but not comparable"
+    end
+
+    if not isWorthKeeping then
+        return nil, nil, nil
+    end
+
+    return current, maximum, nil
+end
+
 local function everyPowerType()
     local powers = {}
 
     for powerName, powerValue in pairs(Enum.PowerType) do
         if type(powerValue) == "number" and powerValue >= 0 then
-            local current = UnitPower("player", powerValue)
-            local maximum = UnitPowerMax("player", powerValue)
+            local current, maximum, note = readPower(powerValue)
 
-            if (current and current > 0) or (maximum and maximum > 0) then
+            if current ~= nil or note then
                 powers[powerName] = {
                     powerType = powerValue,
-                    current = current,
-                    maximum = maximum,
+                    current = tostring(current),
+                    maximum = tostring(maximum),
+                    note = note,
                 }
             end
         end
@@ -55,9 +84,16 @@ local function glidingState()
         return "C_PlayerInfo.GetGlidingInfo is unavailable"
     end
 
-    local isGliding, canGlide, forwardSpeed = C_PlayerInfo.GetGlidingInfo()
+    local succeeded, isGliding, canGlide, forwardSpeed = pcall(C_PlayerInfo.GetGlidingInfo)
+    if not succeeded then
+        return "GetGlidingInfo threw: " .. tostring(isGliding)
+    end
 
-    return { isGliding = isGliding, canGlide = canGlide, forwardSpeed = forwardSpeed }
+    return {
+        isGliding = tostring(isGliding),
+        canGlide = tostring(canGlide),
+        forwardSpeed = tostring(forwardSpeed),
+    }
 end
 
 local function whirlingSurgeState()
@@ -117,6 +153,13 @@ local function visibleRaceFrames()
     return states
 end
 
+local function guarded(label, reader)
+    local succeeded, result = pcall(reader)
+    if succeeded then return result end
+
+    return label .. " threw: " .. tostring(result)
+end
+
 function RaceProbe:Capture(reason)
     local store = DragonRacing:Store()
     store.captures = store.captures or {}
@@ -124,11 +167,11 @@ function RaceProbe:Capture(reason)
     store.captures[#store.captures + 1] = {
         reason = reason,
         capturedAt = date("%Y-%m-%d %H:%M:%S"),
-        auras = everyPlayerAura(),
-        powers = everyPowerType(),
-        gliding = glidingState(),
-        whirlingSurge = whirlingSurgeState(),
-        frames = visibleRaceFrames(),
+        auras = guarded("auras", everyPlayerAura),
+        powers = guarded("powers", everyPowerType),
+        gliding = guarded("gliding", glidingState),
+        whirlingSurge = guarded("whirlingSurge", whirlingSurgeState),
+        frames = guarded("frames", visibleRaceFrames),
     }
 
     while #store.captures > MAXIMUM_CAPTURES do
