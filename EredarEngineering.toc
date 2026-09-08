@@ -35,6 +35,7 @@ src/EditMode/Main.lua
 
 src/SlashCommands/Main.lua
 
+modules/TreasuryTimeline/TreasuryTimeline.lua
 modules/TreasuryTimeline/source/Money/Formatting.lua
 modules/TreasuryTimeline/source/Database/Main.lua
 modules/TreasuryTimeline/source/Reporting/DailySeries.lua
@@ -42,8 +43,8 @@ modules/TreasuryTimeline/source/Money/Repairs.lua
 modules/TreasuryTimeline/source/Money/Tracker.lua
 modules/TreasuryTimeline/source/UserInterface/ChartFrame.lua
 modules/TreasuryTimeline/source/SlashCommands/Main.lua
-modules/TreasuryTimeline/TreasuryTimeline.lua
 
+modules/CrestPlanner/CrestPlanner.lua
 modules/CrestPlanner/source/Model/Crests.lua
 modules/CrestPlanner/source/Model/Equipment.lua
 modules/CrestPlanner/source/Model/UpgradeCost.lua
@@ -60,8 +61,7 @@ modules/CrestPlanner/source/Reconnaissance/EquipmentProbe.lua
 modules/CrestPlanner/source/Reconnaissance/UpgradeProbe.lua
 modules/CrestPlanner/source/Reconnaissance/CraftingOrderProbe.lua
 modules/CrestPlanner/source/SlashCommands/Main.lua
-modules/CrestPlanner/CrestPlanner.lua
 
+modules/DragonRacing/DragonRacing.lua
 modules/DragonRacing/source/RaceProbe.lua
 modules/DragonRacing/source/RaceDisplay.lua
-modules/DragonRacing/DragonRacing.lua
