@@ -64,22 +64,9 @@ function EredarEngineering:CreateModule()
     return module
 end
 
-SLASH_PING_COMMAND1 = "/ping-eredar-tools"
-
-local function pingCommandHandler(msg, editBox)
-    print("Ping from EredarEngineering Addon! - Addon is installed!")
-end
-
-SlashCmdList["PING_COMMAND"] = pingCommandHandler
-
-if not _G.EredarEngineering then
-    print("|cFFFF0000[EredarEngineering]|r MAIN MODULE not found.")
-    return
-end
-
+-- Deliberate shorthand, not an oversight: the tools panel is opened often
+-- enough that two keystrokes earn their obscurity.
 SLASH_DEV_COMMAND1 = "/zz"
-
-
 
 local function devCommandHandler(msg, editBox)
     EredarEngineering.EngineeringToolsFrame:Toggle()
