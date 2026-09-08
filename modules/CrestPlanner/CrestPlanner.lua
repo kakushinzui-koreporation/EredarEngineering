@@ -91,23 +91,36 @@ local function installCostLearner()
     CrestPlanner.costLearnerFrame = learnerFrame
 end
 
-local bootstrapFrame = CreateFrame("Frame")
-bootstrapFrame:RegisterEvent("PLAYER_LOGIN")
+function CrestPlanner:Enable()
+    if self.enabled then return end
 
-bootstrapFrame:SetScript("OnEvent", function(frame)
     assertEveryModuleLoaded()
 
-    CrestPlanner:InitializeStore()
-    CrestPlanner.Crests:Refresh()
-    CrestPlanner.Crests:WarnIfSeedsDrifted()
-    CrestPlanner.Crests:RecordSeasonMaximums()
-    CrestPlanner.Equipment:Read()
+    self:InitializeStore()
+    self.Crests:Refresh()
+    self.Crests:WarnIfSeedsDrifted()
+    self.Crests:RecordSeasonMaximums()
+    self.Equipment:Read()
 
-    CrestPlanner.TooltipHooks:Initialize()
-    CrestPlanner.UpgradeWindowWarning:Initialize()
-    CrestPlanner.SlashCommands:Initialize()
+    self.TooltipHooks:Initialize()
+    self.UpgradeWindowWarning:Initialize()
+    self.SlashCommands:Initialize()
 
     installCostLearner()
 
-    frame:UnregisterEvent("PLAYER_LOGIN")
-end)
+    self.enabled = true
+end
+
+function CrestPlanner:Disable()
+    if not self.enabled then return end
+
+    if self.costLearnerFrame then
+        self.costLearnerFrame:UnregisterAllEvents()
+        self.costLearnerFrame:SetScript("OnEvent", nil)
+        self.costLearnerFrame = nil
+    end
+
+    self.enabled = false
+end
+
+EredarEngineering.Modules:Register("crestPlanner", CrestPlanner)

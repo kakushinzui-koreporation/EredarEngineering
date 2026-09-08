@@ -31,16 +31,26 @@ local function assertEveryModuleLoaded()
     end
 end
 
-local bootstrapFrame = CreateFrame("Frame")
-bootstrapFrame:RegisterEvent("PLAYER_LOGIN")
+function TreasuryTimeline:Enable()
+    if self.enabled then return end
 
-bootstrapFrame:SetScript("OnEvent", function(frame)
     assertEveryModuleLoaded()
 
-    TreasuryTimeline.DailySeries:RunSelfCheck()
-    TreasuryTimeline.Database:Initialize()
-    TreasuryTimeline.Tracker:Initialize()
-    TreasuryTimeline.SlashCommands:Initialize()
+    self.DailySeries:RunSelfCheck()
+    self.Database:Initialize()
+    self.Tracker:Initialize()
+    self.SlashCommands:Initialize()
 
-    frame:UnregisterEvent("PLAYER_LOGIN")
-end)
+    self.enabled = true
+end
+
+function TreasuryTimeline:Disable()
+    if not self.enabled then return end
+
+    self.Tracker:Stop()
+    self.ChartFrame:Hide()
+
+    self.enabled = false
+end
+
+EredarEngineering.Modules:Register("treasuryTimeline", TreasuryTimeline)

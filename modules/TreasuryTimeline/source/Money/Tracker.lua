@@ -51,6 +51,14 @@ function Tracker:Initialize()
     self:Resynchronize()
 end
 
+function Tracker:Stop()
+    if not self.frame then return end
+
+    self.frame:UnregisterAllEvents()
+    self.frame:SetScript("OnEvent", nil)
+    self.frame = nil
+end
+
 function Tracker:Resynchronize()
     self.lastKnownCopper = GetMoney()
     TreasuryTimeline.Database:Reconcile(self.lastKnownCopper)
